@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from database import engine, Base, get_db
 from models import Transaction
-from pydantic import BaseModel
+from pydantic import BaseModel , Field
 from fastapi import HTTPException
 
 
@@ -139,13 +139,18 @@ app = FastAPI(
 # CORS = Cross-Origin Resource Sharing
 # ============================================================
 class TransactionCreate(BaseModel):
-    amount: float
+
+    # Amount must be greater than 0.
+    amount: float = Field(gt=0)
+
     type: str
     category: str
     description: str = ""
+
     date: str
 
 
+    
 app.add_middleware(
     CORSMiddleware,
 

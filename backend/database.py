@@ -3,7 +3,7 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 
 
 DATABASE_URL = (
-    "postgresql://postgres:YOUR_PASSWORD@localhost:5432/finance_db"
+    "postgresql://postgres:nitya11@localhost:5432/finance_db"
 )
 
 

@@ -1,5 +1,9 @@
+import os
+from pathlib import Path
+
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from sqlalchemy.orm import Session
 
@@ -162,7 +166,10 @@ app.add_middleware(
     # This is convenient for development.
     # Later, in production, we should restrict this
     # to our actual frontend domain.
-    allow_origins=["*"],
+    allow_origins=[
+        origin.strip()
+        for origin in os.getenv("CORS_ORIGINS", "*").split(",")
+    ],
 
     # Allow cookies/credentials when required.
     allow_credentials=True,
@@ -247,12 +254,10 @@ Base.metadata.create_all(bind=engine)
 #
 # ============================================================
 
-@app.get("/")
+@app.get("/health")
 def home():
 
-    return {
-        "message": "Personal Finance Analyzer API is running"
-    }
+    return {"message": "Personal Finance Analyzer API is running"}
 
 
 # ============================================================
@@ -366,6 +371,28 @@ def get_transactions(
 
     return transactions
 
+
+@app.get("/analytics")
+def get_analytics(db: Session = Depends(get_db)):
+
+    transactions = db.query(Transaction).all()
+    income = sum(
+        transaction.amount
+        for transaction in transactions
+        if transaction.type == "income"
+    )
+    expenses = sum(
+        transaction.amount
+        for transaction in transactions
+        if transaction.type == "expense"
+    )
+
+    return {
+        "income": income,
+        "expenses": expenses,
+        "savings": income - expenses
+    }
+
 @app.get("/transactions/{transaction_id}")
 def get_transaction(
     transaction_id: int,
@@ -388,6 +415,10 @@ def get_transaction(
         )
 
     return transaction
+
+
+frontend_directory = Path(__file__).resolve().parent.parent / "frontend"
+app.mount("/", StaticFiles(directory=frontend_directory, html=True), name="frontend")
 
 
 @app.post("/transactions")
